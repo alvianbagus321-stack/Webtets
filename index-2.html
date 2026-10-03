@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solar Atlas — A working map of the Sun’s eight planets</title>
+<meta name="description" content="Solar Atlas is an interactive reference to the Sun’s eight planets: orbital mechanics, physical data, and observation notes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <a class="brand" href="#main" aria-label="Solar Atlas home">
+      <svg class="brand__mark" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3.2" class="mark-core"/>
+        <ellipse cx="12" cy="12" rx="10" ry="4.4" class="mark-orbit"/>
+        <circle cx="20.4" cy="10.4" r="1.5" class="mark-planet"/>
+      </svg>
+      <span>Solar&nbsp;Atlas</span>
+    </a>
+
+    <nav class="topnav" aria-label="Primary">
+      <a href="#orrery">Orrery</a>
+      <a href="#ledger">Planet ledger</a>
+      <a href="#fieldnotes">Field notes</a>
+    </nav>
+
+    <div class="topbar__actions">
+      <button class="btn btn--ghost" id="themeToggle" type="button" aria-pressed="false">
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.8 6.8 0 0 0 9.8 9.8Z"/></svg>
+        <span class="btn__label">Light</span>
+      </button>
+      <button class="btn btn--accent" id="paletteButton" type="button">
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h7"/></svg>
+        <span class="btn__label">Search</span>
+        <kbd>⌘K</kbd>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero__grid">
+      <div class="hero__copy reveal" style="--d:0ms">
+        <p class="eyebrow">Reference edition · Revised 12 Sep 2026</p>
+        <h1 id="hero-title">Eight worlds,<br>one gravitational ledger.</h1>
+        <p class="lede">
+          Solar Atlas tracks the planets as instruments, not postcards: orbital periods,
+          axial tilt, surface pressure, and the awkward realities of visiting them.
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn--accent magnetic" href="#orrery">Open the orrery</a>
+          <a class="btn btn--ghost" href="#ledger">Read the data</a>
+        </div>
+        <dl class="hero__meta">
+          <div><dt>Confirmed planets</dt><dd data-count="8">0</dd></div>
+          <div><dt>Dwarf planets noted</dt><dd data-count="5">0</dd></div>
+          <div><dt>Mean orbital speed</dt><dd><span data-count="4.87" data-decimals="2">0</span> km/s</dd></div>
+        </dl>
+      </div>
+
+      <figure class="hero__plate reveal" style="--d:120ms" aria-label="Diagram of planetary orbital distances">
+        <svg id="heroOrbits" viewBox="0 0 520 420" role="img">
+          <defs>
+            <radialGradient id="sunWash" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="var(--accent)"/>
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="260" cy="210" r="150" fill="url(#sunWash)" opacity=".16"/>
+          <g class="orbit-set" id="heroOrbitSet"></g>
+          <circle cx="260" cy="210" r="13" class="sun"/>
+          <text x="260" y="252" class="svg-label" text-anchor="middle">Sol</text>
+        </svg>
+        <figcaption>
+          Orbital radii are compressed logarithmically; Neptune would otherwise sit 4.5 billion km off the page.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="orrery" aria-labelledby="orrery-title">
+    <div class="section__head reveal">
+      <div>
+        <p class="eyebrow">Interactive model</p>
+        <h2 id="orrery-title">The orrery</h2>
+      </div>
+      <p class="section__note">
+        Drag the time control or press <kbd>Space</kbd> to pause. Planet sizes are illustrative;
+        orbital periods use their true ratios.
+      </p>
+    </div>
+
+    <div class="orrery reveal" style="--d:80ms">
+      <div class="orrery__stage" id="orreryStage">
+        <div class="skeleton skeleton--stage" id="orrerySkeleton" aria-hidden="true"></div>
+        <svg id="orrery" viewBox="0 0 760 560" role="img" aria-label="Animated orrery of the Solar System"></svg>
+        <div class="orrery__readout" id="orreryReadout" role="status">
+          <span class="readout__label">Simulation day</span>
+          <strong id="simDay">0</strong>
+        </div>
+      </div>
+
+      <aside class="orrery__panel" aria-labelledby="selectedTitle">
+        <p class="eyebrow">Selected body</p>
+        <h3 id="selectedTitle">Mercury</h3>
+        <p id="selectedBlurb" class="panel-blurb">
+          The smallest planet completes a year in 88 Earth days, yet one solar day lasts 176 Earth days.
+        </p>
+        <dl class="spec-grid" id="selectedSpecs"></dl>
+        <button class="btn btn--ghost btn--block" id="focusButton" type="button">
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          Center on selection
+        </button>
+      </aside>
+    </div>
+
+    <div class="controls reveal" style="--d:140ms">
+      <button class="btn btn--ghost" id="playPause" type="button" aria-pressed="true">
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>
+        <span>Pause</span>
+      </button>
+      <label class="range">
+        <span>Time rate</span>
+        <input id="speed" type="range" min="0.25" max="8" step="0.25" value="2">
+        <output id="speedOut">2.0×</output>
+      </label>
+      <div class="toggle-group" role="group" aria-label="Orbit labels">
+        <button class="chip is-active" data-labels="on" type="button" aria-pressed="true">Labels on</button>
+        <button class="chip" data-labels="off" type="button" aria-pressed="false">Labels off</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--ledger" id="ledger" aria-labelledby="ledger-title">
+    <div class="section__head reveal">
+      <div>
+        <p class="eyebrow">Measurements</p>
+        <h2 id="ledger-title">Planet ledger</h2>
+      </div>
+      <div class="ledger-tools">
+        <label class="field">
+          <span class="field__label">Filter</span>
+          <select id="typeFilter">
+            <option value="all">All bodies</option>
+            <option value="terrestrial">Terrestrial</option>
+            <option value="gas">Gas giant</option>
+            <option value="ice">Ice giant</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field__label">Search</span>
+          <input id="tableSearch" type="search" placeholder="Try “Uranus” or “tilt”">
+        </label>
+      </div>
+    </div>
+
+    <div class="table-wrap reveal" style="--d:80ms">
+      <table class="ledger-table" id="ledgerTable">
+        <caption class="visually-hidden">Planetary measurements, sortable by column</caption>
+        <thead>
+          <tr>
+            <th scope="col"><button class="sort" data-key="name">Body</button></th>
+            <th scope="col"><button class="sort" data-key="type">Class</button></th>
+            <th scope="col" class="num"><button class="sort" data-key="distance">Mean distance <span>10⁶ km</span></button></th>
+            <th scope="col" class="num"><button class="sort" data-key="period">Orbital period <span>days</span></button></th>
+            <th scope="col" class="num"><button class="sort" data-key="diameter">Diameter <span>km</span></button></th>
+            <th scope="col" class="num"><button class="sort" data-key="gravity">Gravity <span>m/s²</span></button></th>
+            <th scope="col" class="num"><button class="sort" data-key="moons">Moons</button></th>
+          </tr>
+        </thead>
+        <tbody id="ledgerBody"></tbody>
+      </table>
+      <div class="empty" id="tableEmpty" hidden>
+        <p><strong>No matching bodies.</strong> Try a broader search, or reset the class filter.</p>
+        <button class="btn btn--ghost" id="resetFilters" type="button">Reset filters</button>
+      </div>
+    </div>
+    <p class="table-footnote">Sources: NASA planetary fact sheets; values rounded for comparison, not navigation.</p>
+  </section>
+
+  <section class="section section--notes" id="fieldnotes" aria-labelledby="notes-title">
+    <div class="notes-grid">
+      <article class="note reveal">
+        <p class="eyebrow">Field note 01</p>
+        <h3>Venus runs backwards</h3>
+        <p>Venus rotates east-to-west, so its Sun rises in the west. Its day is longer than its year: 243 Earth days of rotation against 225 days of orbit.</p>
+      </article>
+      <article class="note note--wide reveal" style="--d:70ms">
+        <p class="eyebrow">Field note 02</p>
+        <h3>Jupiter does most of the sweeping</h3>
+        <p>With 2.5 times the mass of every other planet combined, Jupiter shapes asteroid belts and deflects or captures many incoming objects. Its Great Red Spot has been observed for at least 190 years.</p>
+        <div class="note__figure" aria-hidden="true">
+          <svg viewBox="0 0 300 96" class="spark">
+            <path class="spark__line" d="M4 74 C48 68 66 40 104 46 S168 78 204 58 268 18 296 26"/>
+            <circle class="spark__dot" cx="296" cy="26" r="3.5"/>
+          </svg>
+          <span class="spark__caption">Jupiter’s known moons: 95</span>
+        </div>
+      </article>
+      <article class="note reveal" style="--d:140ms">
+        <p class="eyebrow">Field note 03</p>
+        <h3>Neptune was found by mathematics</h3>
+        <p>Astronomers predicted Neptune’s position from irregularities in Uranus’s orbit. It was observed within about a degree of the prediction in 1846.</p>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer__inner">
+    <p>Solar Atlas — an independent reference built for curious readers.</p>
+    <p>Data compiled from public NASA fact sheets. Illustrations are schematic.</p>
+  </div>
+</footer>
+
+<div class="palette" id="palette" hidden>
+  <div class="palette__backdrop" data-close></div>
+  <div class="palette__panel" role="dialog" aria-modal="true" aria-labelledby="paletteTitle">
+    <h2 id="paletteTitle" class="visually-hidden">Command palette</h2>
+    <div class="palette__field">
+      <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="paletteInput" type="text" placeholder="Jump to a planet, section, or action…" autocomplete="off">
+      <kbd>Esc</kbd>
+    </div>
+    <ul class="palette__results" id="paletteResults" role="listbox" aria-label="Results"></ul>
+    <p class="palette__hint">↑ ↓ to move · Enter to select</p>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
